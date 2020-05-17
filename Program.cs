@@ -17,8 +17,9 @@ namespace forex_app_trader
             string urlpost = $"http://localhost:5002/api/forexsession";
             string urlpatchtrade = $"http://localhost:5002/api/forexsession/executetrade/{sessionName}";
             string urlpatchprice = $"http://localhost:5002/api/forexsession/updatesession/{sessionName}";
+            string urlgetRSI = $"http://localhost:5002/api/forexrule/RSI/AUDUSD/2020-01-01/15";
             
-
+            var rsiResponse = await GetAsync<ForexRuleDTO>(urlgetRSI);
             var responseBody = await client.GetStringAsync(urlget);
             var sessionList = JsonSerializer.Deserialize<ForexSessionsDTO>(responseBody);
 
@@ -106,6 +107,13 @@ namespace forex_app_trader
             Console.WriteLine(responsePriceBody);
 
 
+        }
+
+        static async Task<T> GetAsync<T>(string url)
+        {
+            var responseBody = await client.GetStringAsync(url);
+            var data = JsonSerializer.Deserialize<T>(responseBody);
+            return data;
         }
 
         static async Task<HttpResponseMessage> PatchAsync<T>(T dto,string url)
