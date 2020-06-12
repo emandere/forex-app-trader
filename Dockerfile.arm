@@ -1,0 +1,14 @@
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
+WORKDIR /app
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY . ./
+RUN dotnet build
+RUN dotnet publish -c Release -r linux-arm64 -o out --self-contained true /p:PublishTrimmed=true
+
+# Build runtime image
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-buster-slim-arm64v8
+WORKDIR /app
+COPY --from=build-env /app/out .
+ENTRYPOINT ["dotnet", "forex-app-trader.dll"]

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Net.Http;
@@ -6,6 +7,7 @@ using System.Text;
 using System.Linq;
 using System.Text.Json;
 using forex_app_trader.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace forex_app_trader
 {
@@ -26,8 +28,15 @@ namespace forex_app_trader
 
         static async Task Main(string[] args)
         {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
+            IConfigurationRoot configuration = builder.Build();
+            string server = configuration.GetSection("Servers:Local").Value;
             //await runTestData();
-            await runDailyTrader();
+            await runDailyTrader(server);
         }
         
 
@@ -58,13 +67,13 @@ namespace forex_app_trader
             var responseTradeBody =await PatchAsync<ForexTradeDTO>(trade,urlpatchtrade);
         }
 
-        static async Task runDailyTrader()
+        static async Task runDailyTrader(string server)
         {
             string sessionName = "liveSessionDaily";
-            string urlget = $"http://localhost:5002/api/forexsession/{sessionName}";
-            string urlpost = $"http://localhost:5002/api/forexsession";
-            string urlpatchprice = $"http://localhost:5002/api/forexsession/updatesession/{sessionName}";
-            string urlgetdailyrealprices = $"http://localhost:5002/api/forexprices";
+            string urlget = $"http://{server}/api/forexsession/{sessionName}";
+            string urlpost = $"http://{server}/api/forexsession";
+            string urlpatchprice = $"http://{server}/api/forexsession/updatesession/{sessionName}";
+            string urlgetdailyrealprices = $"http://{server}/api/forexprices";
 
             var sessionList = await GetAsync<ForexSessionsDTO>(urlget);
 
