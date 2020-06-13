@@ -35,7 +35,7 @@ namespace forex_app_trader
                 .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
             IConfigurationRoot configuration = builder.Build();
             string server = configuration.GetSection("Servers:Local").Value;
-            //await runTestData();
+            //await runTestData(server);
             Console.WriteLine(server);
             await runDailyTrader(server);
         }
@@ -83,6 +83,7 @@ namespace forex_app_trader
                 var sessionIn = new ForexSessionInDTO()
                 {
                     Id = sessionName,
+                    SessionType = new SessionType(){Index = 0},
                     SessionUser = new SessionUserInDTO()
                     {
                         Accounts = new AccountsInDTO()
@@ -176,6 +177,7 @@ namespace forex_app_trader
             var sessionIn = new ForexSessionInDTO()
             {
                 Id = sessionName,
+                SessionType = new SessionType(){Index = 0},
                 SessionUser = new SessionUserInDTO()
                 {
                      Accounts = new AccountsInDTO()
