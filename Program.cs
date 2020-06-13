@@ -36,6 +36,7 @@ namespace forex_app_trader
             IConfigurationRoot configuration = builder.Build();
             string server = configuration.GetSection("Servers:Local").Value;
             //await runTestData();
+            Console.WriteLine(server);
             await runDailyTrader(server);
         }
         
