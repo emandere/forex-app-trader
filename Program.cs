@@ -41,9 +41,9 @@ namespace forex_app_trader
         }
         
 
-        static async Task<bool> ShouldExecuteTrade(string pair, string ruleName,string currDay,int window)
+        static async Task<bool> ShouldExecuteTrade(string server,string pair, string ruleName,string currDay,int window)
         {
-            string urlgetStrategy = $"http://localhost:5002/api/forexrule/{ruleName}/{pair}/{currDay}/{window}";
+            string urlgetStrategy = $"http://{server}/api/forexrule/{ruleName}/{pair}/{currDay}/{window}";
             var ruleResult = await GetAsync<ForexRuleDTO>(urlgetStrategy);
             if(ruleResult.IsMet)
                 return true;
@@ -140,7 +140,7 @@ namespace forex_app_trader
                     var price = prices.prices.FirstOrDefault(x => x.Instrument == pair);
                     if(!days.Contains(currDayTrade))
                     {
-                        bool shouldTrade = await ShouldExecuteTrade(pair,"RSI",currDay,14);
+                        bool shouldTrade = await ShouldExecuteTrade(server,pair,"RSI",currDay,14);
                         Console.WriteLine($"{pair} {price.Bid} {shouldTrade}");
                         if(shouldTrade)
                         {
