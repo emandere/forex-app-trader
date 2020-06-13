@@ -70,7 +70,7 @@ namespace forex_app_trader
 
         static async Task runDailyTrader(string server)
         {
-            string sessionName = "liveSessionDaily";
+            string sessionName = "liveSessionDailyReal";
             string urlget = $"http://{server}/api/forexsession/{sessionName}";
             string urlpost = $"http://{server}/api/forexsession";
             string urlpatchprice = $"http://{server}/api/forexsession/updatesession/{sessionName}";
