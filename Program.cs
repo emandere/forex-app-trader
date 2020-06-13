@@ -51,10 +51,10 @@ namespace forex_app_trader
                 return false;   
         }
 
-        static async Task executeTrade(ForexSessionDTO session,ForexPriceDTO currPrice,string currDay)
+        static async Task executeTrade(string server,ForexSessionDTO session,ForexPriceDTO currPrice,string currDay)
         {
             //string currDay = currPrice.UTCTime.ToString("yyyy-MM-dd");
-            string urlpatchtrade = $"http://localhost:5002/api/forexsession/executetrade/{session.Id}";
+            string urlpatchtrade = $"http://{server}/api/forexsession/executetrade/{session.Id}";
             var trade = new ForexTradeDTO()
             {
                 Pair = currPrice.Instrument,
@@ -144,7 +144,7 @@ namespace forex_app_trader
                         Console.WriteLine($"{pair} {price.Bid} {shouldTrade}");
                         if(shouldTrade)
                         {
-                            await executeTrade(session,price,currDayTrade);
+                            await executeTrade(server,session,price,currDayTrade);
                             sessionList = await GetAsync<ForexSessionsDTO>(urlget);
                             session = sessionList.sessions[0];
                         }
@@ -220,7 +220,7 @@ namespace forex_app_trader
                     bool shouldTrade = await ShouldExecuteTrade(server,pair,session.Strategy.ruleName,currDay,session.Strategy.window);
                     if(shouldTrade)
                     {
-                        await executeTrade(session,dailyrealprices.prices[0],currDayRealTime);
+                        await executeTrade(server,session,dailyrealprices.prices[0],currDayRealTime);
                         sessionList = await GetAsync<ForexSessionsDTO>(urlget);
                         session = sessionList.sessions[0];
                     }
