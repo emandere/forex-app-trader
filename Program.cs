@@ -158,7 +158,7 @@ namespace forex_app_trader
         }
 
 
-        static async Task runTestData()
+        static async Task runTestData(string server)
         {
             string sessionName = "liveSession2";
             string urlget = $"http://localhost:5002/api/forexsession/{sessionName}";
@@ -217,7 +217,7 @@ namespace forex_app_trader
                     
                     var dailyrealprices = await GetAsync<ForexPricesDTO>(urlgetdailyrealprices);
                     Console.WriteLine($"{pair} {currDay}");
-                    bool shouldTrade = await ShouldExecuteTrade(pair,session.Strategy.ruleName,currDay,session.Strategy.window);
+                    bool shouldTrade = await ShouldExecuteTrade(server,pair,session.Strategy.ruleName,currDay,session.Strategy.window);
                     if(shouldTrade)
                     {
                         await executeTrade(session,dailyrealprices.prices[0],currDayRealTime);
