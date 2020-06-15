@@ -9,18 +9,18 @@ namespace forex_app_trader.Models
     }
     public  class ForexPriceDTO
     {
-        [JsonPropertyName("Instrument")]
+        [JsonPropertyName("instrument")]
         public string Instrument { get; set; }
 
-        [JsonPropertyName("Time")]
+        [JsonPropertyName("time")]
 
         public string Time { get; set; }  
 
-        [JsonPropertyName("Bid")]
+        [JsonPropertyName("bid")]
  
         public double Bid { get; set; }
 
-        [JsonPropertyName("Ask")]
+        [JsonPropertyName("ask")]
         public double Ask { get; set; }
         public DateTime UTCTime{get => DateTime.Parse(Time);}
     }   
