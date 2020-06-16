@@ -70,7 +70,7 @@ namespace forex_app_trader
 
         static async Task runDailyTrader(string server)
         {
-            string sessionName = "liveSessionDailyReal";
+            string sessionName = "liveSessionDailyReal3";
             string urlget = $"http://{server}/api/forexsession/{sessionName}";
             string urlpost = $"http://{server}/api/forexsession";
             string urlpatchprice = $"http://{server}/api/forexsession/updatesession/{sessionName}";
@@ -83,6 +83,7 @@ namespace forex_app_trader
                 var sessionIn = new ForexSessionInDTO()
                 {
                     Id = sessionName,
+                    StartDate = DateTime.Now.ToString("yyyy-MM-dd"),
                     SessionType = new SessionType(){Index = 0},
                     SessionUser = new SessionUserInDTO()
                     {
