@@ -112,50 +112,57 @@ namespace forex_app_trader
             }
             
             while(true)
-            {
-                var sessionsDTO = await GetAsync<ForexSessionsDTO>(urlget);
-                var session = sessionsDTO.sessions[0];
-
-                var currDay = DateTime.Now.ToString("yyyy-MM-dd");
-                var currDayTrade =  DateTime.Now.ToString("yyyyMMdd");
-                
-                var prices = await GetAsync<ForexPricesDTO>(urlgetdailyrealprices);
-                foreach(var pair in pairs)
+            { 
+                try
                 {
-                    var days = session.SessionUser
-                                      .Accounts
-                                      .Primary
-                                      .Trades
-                                      .Where(x=>x.Pair==pair)
-                                      .Select(x => x.OpenDate).ToList();
+                    var sessionsDTO = await GetAsync<ForexSessionsDTO>(urlget);
+                    var session = sessionsDTO.sessions[0];
 
-                    days.InsertRange
-                    (0,session
-                        .SessionUser
-                        .Accounts
-                        .Primary
-                        .ClosedTrades
-                        .Where(x=>x.Pair==pair)
-                        .Select(x => x.OpenDate).ToList()
-                    );
+                    var currDay = DateTime.Now.ToString("yyyy-MM-dd");
+                    var currDayTrade =  DateTime.Now.ToString("yyyyMMdd");
                     
-                    var price = prices.prices.FirstOrDefault(x => x.Instrument == pair);
-                    if(!days.Contains(currDayTrade))
+                    var prices = await GetAsync<ForexPricesDTO>(urlgetdailyrealprices);
+                    foreach(var pair in pairs)
                     {
-                        bool shouldTrade = await ShouldExecuteTrade(server,pair,"RSI",currDay,14);
-                        Console.WriteLine($"{pair} {price.Bid} {shouldTrade}");
-                        if(shouldTrade)
-                        {
-                            await executeTrade(server,session,price,currDayTrade);
-                            sessionList = await GetAsync<ForexSessionsDTO>(urlget);
-                            session = sessionList.sessions[0];
-                        }
+                        var days = session.SessionUser
+                                        .Accounts
+                                        .Primary
+                                        .Trades
+                                        .Where(x=>x.Pair==pair)
+                                        .Select(x => x.OpenDate).ToList();
+
+                        days.InsertRange
+                        (0,session
+                            .SessionUser
+                            .Accounts
+                            .Primary
+                            .ClosedTrades
+                            .Where(x=>x.Pair==pair)
+                            .Select(x => x.OpenDate).ToList()
+                        );
                         
+                        var price = prices.prices.FirstOrDefault(x => x.Instrument == pair);
+                        if(!days.Contains(currDayTrade))
+                        {
+                            bool shouldTrade = await ShouldExecuteTrade(server,pair,"RSI",currDay,14);
+                            Console.WriteLine($"{pair} {price.Bid} {shouldTrade}");
+                            if(shouldTrade)
+                            {
+                                await executeTrade(server,session,price,currDayTrade);
+                                sessionList = await GetAsync<ForexSessionsDTO>(urlget);
+                                session = sessionList.sessions[0];
+                            }
+                            
+                        }
+                        var responsePriceBody = await PatchAsync<ForexPriceDTO>(price,urlpatchprice);
                     }
-                    var responsePriceBody = await PatchAsync<ForexPriceDTO>(price,urlpatchprice);
+                    Console.WriteLine("Updating");
+                    await Task.Delay(1000*30*1);
                 }
-                Console.WriteLine("Updating");
-                await Task.Delay(1000*30*1);
+                catch(Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             }
         }
 
