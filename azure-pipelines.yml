@@ -21,7 +21,7 @@ stages:
   - job: Build
     displayName: Build
     pool:
-      name: Azure Pipelines
+      vmImage: 'ubuntu-latest'
     steps:
     - task: Docker@2
       displayName: Build an x86 image
