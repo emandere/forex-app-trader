@@ -21,7 +21,7 @@ stages:
   - job: Build
     displayName: Build
     pool:
-      name: Default
+      name: Azure Pipelines
     steps:
     - task: Docker@2
       displayName: Build an x86 image
