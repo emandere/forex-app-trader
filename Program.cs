@@ -68,6 +68,11 @@ namespace forex_app_trader
             var responseTradeBody =await PatchAsync<ForexTradeDTO>(trade,urlpatchtrade);
         }
 
+        static int getFiFo(IEnumerable<int> units)
+        {
+            return units.Select( x => Math.Abs(x)).Max() + 1;
+        }
+
         static async Task runDailyTrader(string server)
         {
             string sessionName = "liveSessionDailyReal3";
@@ -77,6 +82,7 @@ namespace forex_app_trader
             string urlgetdailyrealprices = $"http://{server}/api/forexprices";
 
             var sessionList = await GetAsync<ForexSessionsDTO>(urlget);
+           
 
             if(sessionList.sessions.Length == 0)
             {
