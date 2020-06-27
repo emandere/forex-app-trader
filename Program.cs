@@ -55,11 +55,12 @@ namespace forex_app_trader
         {
             //string currDay = currPrice.UTCTime.ToString("yyyy-MM-dd");
             string urlpatchtrade = $"http://{server}/api/forexsession/executetrade/{session.Id}";
+            var openTradeUnits = session.SessionUser.Accounts.Primary.Trades.Select(x => x.Units);
             var trade = new ForexTradeDTO()
             {
                 Pair = currPrice.Instrument,
                 Price = currPrice.Bid,
-                Units = session.Strategy.units,
+                Units = (int) getFiFo(openTradeUnits,session.Strategy.units),
                 StopLoss = currPrice.Bid * session.Strategy.stopLoss,
                 TakeProfit = currPrice.Bid * session.Strategy.takeProfit,
                 Date = currDay
@@ -68,9 +69,9 @@ namespace forex_app_trader
             var responseTradeBody =await PatchAsync<ForexTradeDTO>(trade,urlpatchtrade);
         }
 
-        static int getFiFo(IEnumerable<int> units)
+        static long getFiFo(IEnumerable<long> units,int defaultUnits)
         {
-            return units.Select( x => Math.Abs(x)).Max() + 1;
+            return units.Count() > 0 ? units.Select( x => Math.Abs(x)).Max() + 1 : defaultUnits;
         }
 
         static async Task runDailyTrader(string server)
