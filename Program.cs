@@ -26,6 +26,18 @@ namespace forex_app_trader
             "USDJPY"
         };
 
+        static Dictionary<string,string> pairToInstrument= new Dictionary<string,string>()
+        {
+            {"AUDUSD","AUD_USD"},
+            {"EURUSD","EUR_USD"},
+            {"GBPUSD","GBP_USD"},
+            {"NZDUSD","NZD_USD"},
+            {"USDCAD","USD_CAD"},
+            {"USDCHF","USD_CHF"},
+            {"USDJPY","USD_JPY"},
+        };
+
+
         static async Task Main(string[] args)
         {
             var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
@@ -55,7 +67,10 @@ namespace forex_app_trader
         {
             //string currDay = currPrice.UTCTime.ToString("yyyy-MM-dd");
             string urlpatchtrade = $"http://{server}/api/forexsession/executetrade/{session.Id}";
-            var openTradeUnits = session.SessionUser.Accounts.Primary.Trades.Select(x => x.Units);
+            string urlrealtrade = $"http://{server}/api/forextrade";
+
+            var openTradesDTO =  await GetAsync<ForexOpenTradesDTO>(urlrealtrade);
+            var openTradeUnits = openTradesDTO.Trades.Select(x => x.Units);//session.SessionUser.Accounts.Primary.Trades.Select(x => x.Units);
             var trade = new ForexTradeDTO()
             {
                 Pair = currPrice.Instrument,
@@ -65,8 +80,19 @@ namespace forex_app_trader
                 TakeProfit = currPrice.Bid * session.Strategy.takeProfit,
                 Date = currDay
             };
+
+            var realtrade = new ForexTradeDTO()
+            {
+                Pair = pairToInstrument[currPrice.Instrument],
+                Price = currPrice.Bid,
+                Units = (int) getFiFo(openTradeUnits,session.Strategy.units),
+                StopLoss = currPrice.Bid * session.Strategy.stopLoss,
+                TakeProfit = currPrice.Bid * session.Strategy.takeProfit,
+                Date = currDay
+            };
     
             var responseTradeBody =await PatchAsync<ForexTradeDTO>(trade,urlpatchtrade);
+            var responseRealTradeBody =await PostAsync<ForexTradeDTO>(realtrade,urlrealtrade);
         }
 
         static long getFiFo(IEnumerable<long> units,int defaultUnits)
@@ -76,7 +102,7 @@ namespace forex_app_trader
 
         static async Task runDailyTrader(string server)
         {
-            string sessionName = "liveSessionDailyReal3";
+            string sessionName = "liveSession2";
             string urlget = $"http://{server}/api/forexsession/{sessionName}";
             string urlpost = $"http://{server}/api/forexsession";
             string urlpatchprice = $"http://{server}/api/forexsession/updatesession/{sessionName}";
@@ -107,7 +133,7 @@ namespace forex_app_trader
                     Strategy = new StrategyInDTO()
                     {
                         RuleName = "RSI",
-                        Window = 15,
+                        Window = 14,
                         Position = "short",
                         StopLoss = 1.007,
                         TakeProfit = 0.998,
