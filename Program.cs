@@ -102,7 +102,7 @@ namespace forex_app_trader
 
         static async Task runDailyTrader(string server)
         {
-            string sessionName = "liveSession2";
+            string sessionName = "liveSessionRSICSharp";
             string urlget = $"http://{server}/api/forexsession/{sessionName}";
             string urlpost = $"http://{server}/api/forexsession";
             string urlpatchprice = $"http://{server}/api/forexsession/updatesession/{sessionName}";
@@ -125,7 +125,7 @@ namespace forex_app_trader
                             Primary = new AccountInDTO()
                             {
                                 Id = "primary",
-                                Cash = 3302.52,
+                                Cash = 191.41,
                             }
                         }
 
@@ -152,7 +152,7 @@ namespace forex_app_trader
                     var session = sessionsDTO.sessions[0];
 
                     var currDay = DateTime.Now.ToString("yyyy-MM-dd");
-                    var currDayTrade =  DateTime.Now.ToString("yyyyMMdd");
+                    var currDayTrade =  DateTime.Now.ToString("yyyy-MM-dd");
                     
                     var prices = await GetAsync<ForexPricesDTO>(urlgetdailyrealprices);
                     foreach(var pair in pairs)
