@@ -116,6 +116,7 @@ namespace forex_app_trader
                 var sessionIn = new ForexSessionDTO()
                 {
                     Id = sessionName,
+                    StartDate = DateTime.Now.ToString("yyyy-MM-dd"),
                     SessionType = "live",
                     SessionUser = new SessionUserDTO()
                     {
