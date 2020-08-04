@@ -113,16 +113,15 @@ namespace forex_app_trader
 
             if(sessionList.sessions.Length == 0)
             {
-                var sessionIn = new ForexSessionInDTO()
+                var sessionIn = new ForexSessionDTO()
                 {
                     Id = sessionName,
-                    StartDate = DateTime.Now.ToString("yyyy-MM-dd"),
-                    SessionType = new SessionType(){Index = 0},
-                    SessionUser = new SessionUserInDTO()
+                    SessionType = "live",
+                    SessionUser = new SessionUserDTO()
                     {
-                        Accounts = new AccountsInDTO()
+                        Accounts = new AccountsDTO()
                         {
-                            Primary = new AccountInDTO()
+                            Primary = new AccountDTO()
                             {
                                 Id = "primary",
                                 Cash = 191.41,
@@ -130,18 +129,22 @@ namespace forex_app_trader
                         }
 
                     },
-                    Strategy = new StrategyInDTO()
+                    Strategy = new StrategyDTO()
                     {
-                        RuleName = "RSI",
-                        Window = 14,
-                        Position = "short",
-                        StopLoss = 1.007,
-                        TakeProfit = 0.998,
-                        Units = 100
+                        ruleName = "RSI",
+                        window = 15,
+                        position = "short",
+                        stopLoss = 1.007,
+                        takeProfit = 0.998,
+                        units = 100
                     }
                 };
-                var sessions = new ForexSessionInDTO[]{sessionIn};
-                var responsePostBody = await PostAsync<ForexSessionInDTO[]>(sessions,urlpost);
+
+                var sessions = new ForexSessionsDTO()
+                {
+                    sessions = new ForexSessionDTO[]{sessionIn}
+                };
+                var responsePostBody = await PostAsync<ForexSessionsDTO>(sessions,urlpost);
             }
             
             while(true)
@@ -215,35 +218,39 @@ namespace forex_app_trader
             if(sessionList.sessions.Length > 0)
                 await client.DeleteAsync(urlget);
             
-            var sessionIn = new ForexSessionInDTO()
+            var sessionIn = new ForexSessionDTO()
             {
                 Id = sessionName,
-                SessionType = new SessionType(){Index = 0},
-                SessionUser = new SessionUserInDTO()
+                SessionType = "live",
+                SessionUser = new SessionUserDTO()
                 {
-                     Accounts = new AccountsInDTO()
+                     Accounts = new AccountsDTO()
                      {
-                         Primary = new AccountInDTO()
+                         Primary = new AccountDTO()
                          {
                              Id = "primary",
-                             Cash = 3302.52,
+                             Cash = 191.41,
                          }
                      }
 
                 },
-                Strategy = new StrategyInDTO()
+                Strategy = new StrategyDTO()
                 {
-                    RuleName = "RSI",
-                    Window = 15,
-                    Position = "short",
-                    StopLoss = 1.007,
-                    TakeProfit = 0.998,
-                    Units = 100
+                    ruleName = "RSI",
+                    window = 15,
+                    position = "short",
+                    stopLoss = 1.007,
+                    takeProfit = 0.998,
+                    units = 100
                 }
             };
 
-            var sessions = new ForexSessionInDTO[]{sessionIn};
-            var responsePostBody = await PostAsync<ForexSessionInDTO[]>(sessions,urlpost);
+            //var sessionsList = new ForexSessionDTO[]{sessionIn};
+            var sessions = new ForexSessionsDTO()
+            {
+                sessions = new ForexSessionDTO[]{sessionIn}
+            };
+            var responsePostBody = await PostAsync<ForexSessionsDTO>(sessions,urlpost);
 
             var sessionsDTO = await GetAsync<ForexSessionsDTO>(urlget);
             var session = sessionsDTO.sessions[0];
