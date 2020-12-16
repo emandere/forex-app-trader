@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -7,7 +8,10 @@ using System.Text;
 using System.Linq;
 using System.Text.Json;
 using forex_app_trader.Models;
+using forex_app_trader.Domain;
 using Microsoft.Extensions.Configuration;
+
+using Dasync.Collections;
 
 namespace forex_app_trader
 {
@@ -47,7 +51,12 @@ namespace forex_app_trader
                 .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true);
             IConfigurationRoot configuration = builder.Build();
             string server = configuration.GetSection("Servers:Local").Value;
+            //var sw = new Stopwatch();
+            //sw.Start();
             //await runTestData(server);
+            //await runTestDataDomain(server);
+            //sw.Stop();
+            //Console.WriteLine($"Elapsed Time {sw.ElapsedMilliseconds / 1000.0} ");
             Console.WriteLine(server);
             await runDailyTrader(server);
         }
@@ -293,7 +302,147 @@ namespace forex_app_trader
             }
         }
 
-      
+
+        static async Task runTestDataDomain(string server)
+        {
+            string sessionName = "liveSession2";
+            string urlget = $"http://localhost:5002/api/forexsession/{sessionName}";
+            string urlpost = $"http://localhost:5002/api/forexsession";
+            string urlpatchprice = $"http://localhost:5002/api/forexsession/updatesession/{sessionName}";
+
+            var startDate = "20190324";
+            var endDate = "20200522";
+
+            var sessionList = await GetAsync<ForexSessionsDTO>(urlget);
+
+            if(sessionList.sessions.Length > 0)
+                await client.DeleteAsync(urlget);
+            
+            var session = new ForexSession()
+            {
+                Id = sessionName,
+                SessionType = "live",
+                SessionUser = new SessionUser()
+                {
+                     Accounts = new Accounts()
+                     {
+                         Primary = new Account()
+                         {
+                             Id = "primary",
+                             Cash = 191.41,
+                             Trades = new List<Trade>(),
+                             ClosedTrades = new List<Trade>(),
+                             BalanceHistory = new List<BalanceHistory>()
+                         }
+                     }
+
+                },
+                Strategy = new Strategy()
+                {
+                    ruleName = "RSI",
+                    window = 15,
+                    position = "short",
+                    stopLoss = 1.007,
+                    takeProfit = 0.998,
+                    units = 100
+                }
+            };
+
+            var realtimeprices = new Dictionary<string,ForexPricesDTO>();
+            var trashName = new List<ForexDailyPriceDTO>();
+            foreach(var pair in pairs)
+            {
+                var urlGetDailyPricesRange = $"http://localhost:5002/api/forexdailyprices/{pair}/{startDate}/{endDate}"; 
+                var dailypricesRange = await GetAsync<List<ForexDailyPriceDTO>>(urlGetDailyPricesRange);   
+                trashName = dailypricesRange;
+                await dailypricesRange.ParallelForEachAsync(async x => 
+                {
+                    var pricesResult = await GetRealPrices(x.Pair,x.Datetime.ToString("yyyyMMdd"));
+                    realtimeprices.Add(pricesResult.Item1,pricesResult.Item2);
+                },maxDegreeOfParallelism: 8);
+
+                
+                /*int step = 8;
+                int end = 0;
+                
+                for(int i=0;i<dailypricesRange.Count();i+=step)
+                {
+                    end = i + step;
+                    if(end > dailypricesRange.Count()-1)
+                        end =  dailypricesRange.Count()-1;
+
+                    var batch = new List<ForexDailyPriceDTO>();
+                    for(int j = i;j<end;j++)
+                    {
+                        batch.Add(dailypricesRange[j]);
+                    }
+
+                    var batchTasks = batch.Select(x => GetRealPrices(x.Pair,x.Datetime.ToString("yyyyMMdd")));
+                    var batchRealPrices = await Task.WhenAll(batchTasks);
+
+                    foreach(var pricelist in batchRealPrices)
+                    {
+                        realtimeprices.Add(pricelist.Item1,pricelist.Item2);
+                    }
+                }*/
+            }
+            
+            foreach(var dailyPrice in trashName)
+            {
+                foreach(var pair in pairs)
+                {
+                    var currDay = dailyPrice.Datetime.ToString("yyyy-MM-dd");
+                    var currDayRealTime = dailyPrice.Datetime.ToString("yyyyMMdd");
+                    //var urlgetdailyrealprices = $"http://localhost:5002/api/forexdailyrealprices/{pair}/{currDayRealTime}";
+                    
+                    var dailyrealprices = realtimeprices[pair+currDayRealTime];//await GetAsync<ForexPricesDTO>(urlgetdailyrealprices);
+                    Console.WriteLine($"{pair} {currDay}");
+                    bool shouldTrade = await ShouldExecuteTrade(server,pair,session.Strategy.ruleName,currDay,session.Strategy.window);
+                    //await executeTrade(server,session,dailyrealprices.prices[0],currDayRealTime);
+                    var currPrice = dailyrealprices.prices[0];
+                    var openTradeUnits = session.SessionUser.Accounts.Primary.Trades.Select(x => x.Units);
+                    if(shouldTrade)
+                    {
+                        var trade = new ForexTradeDTO()
+                        {
+                            Pair = currPrice.Instrument,
+                            Price = currPrice.Bid,
+                            Units = (int) getFiFo(openTradeUnits,session.Strategy.units),
+                            StopLoss = currPrice.Bid * session.Strategy.stopLoss,
+                            TakeProfit = currPrice.Bid * session.Strategy.takeProfit,
+                            Date = currDay
+                        };
+                        session.ExecuteTrade(pair,trade.Price,trade.Units,trade.StopLoss,trade.TakeProfit,trade.Long,trade.Date);
+                    }
+                    var tradepairs = session.SessionUser.Accounts.Primary.Trades.Select(x=>x.Pair);
+                    if(tradepairs.Contains(pair))
+                    {
+                        foreach(var realPrice in dailyrealprices.prices.Take(100))
+                        {
+                            session.UpdateSession(pair,realPrice.Bid,realPrice.Ask,realPrice.Time.ToString());
+                            //Console.WriteLine($" {realPrice.Time} {realPrice.Bid}");
+                            //var responsePriceBody = await PatchAsync<ForexPriceDTO>(realPrice,urlpatchprice);
+                        }
+                        //sessionList = await GetAsync<ForexSessionsDTO>(urlget);
+                        //session = sessionList.sessions[0];
+                    }
+
+                    
+                }
+
+            }
+        }
+
+        static async Task<(string,ForexPricesDTO)> GetRealPrices(string pair,string day)
+        {
+            var urlgetdailyrealprices = $"http://localhost:5002/api/forexdailyrealprices/{pair}/{day}";
+                    
+            var dailyrealprices = await GetAsync<ForexPricesDTO>(urlgetdailyrealprices);
+            Console.WriteLine($"reading {pair} {day}");
+
+            return (pair+day,dailyrealprices);
+        }
+
         static async Task<T> GetAsync<T>(string url)
         {
             var responseBody = await client.GetStringAsync(url);
