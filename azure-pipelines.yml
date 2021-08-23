@@ -52,7 +52,7 @@ stages:
     # track deployments on the environment
   - deployment: WSL_Linux
     pool:
-      name: LocalLinux
+      name: LocalLinux2
     # creates an environment if it doesn’t exist
     environment: '$(serviceName)'
     strategy:
