@@ -18,3 +18,5 @@ spec:
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Prodk3s"
+      nodeSelector:
+        platform: {platform}
